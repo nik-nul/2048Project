@@ -114,7 +114,7 @@ void play(){
     Grid cur;
     int tmpcnt = 23; // chosen arbitrarily. that doesn't matter
     bool flag;
-    while(!cur.winQ()){
+    while(1){
         cout<<endl<<"YOUR SCORE: "<<SCORE<<endl;
         cur.display();
         err:
@@ -146,16 +146,26 @@ void play(){
         }
         if(!LOG) cls();
         tmpcnt = cur.cnt_zeros();
-        if(tmpcnt == 0){
-            if(cur.deadQ()){
-                cout<<"You Lose~"<<endl<<"Total Score: "<<SCORE<<endl<<"Enter m to menu";
-                ROW = 4; COLUMN = 4; GOAL = 2048; PROB = 10; SCORE = 0; wid = 6;
-                cur.reset();
-                while(getchar()!=0x6D);
-                break;
-            }
-        }
+        if(tmpcnt == 0) goto L;
         cur.gen2(tmpcnt);
+        tmpcnt = cur.cnt_zeros();
+        if(tmpcnt == 0 && cur.deadQ()){
+            L:
+            cout<<endl;
+            cur.display();
+            cout<<"You Lose~"<<endl<<"Total Score: "<<SCORE<<endl<<"Enter m to menu";
+            ini:
+            ROW = 4; COLUMN = 4; GOAL = 2048; PROB = 10; SCORE = 0; wid = 6;
+            cur.reset();
+            while(getchar()!=0x6D);
+            goto E;
+        }
+        if(cur.winQ()){
+            cout<<endl;
+            cur.display();
+            cout<<"YOU WIN!!!"<<endl<<"Total Score: "<<SCORE<<endl<<"Enter m to menu";
+            goto ini;
+        }
     }
     E:;
 }
