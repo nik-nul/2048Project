@@ -13,6 +13,8 @@
 /* 2023-11-17 19:30*/
 /* i learnt oop in sicp today:) decide to reconstruct a grid class to make it more clear and use vector instead of silly int[][] */
 /* implement the main game */
+/* submission id: db6e2486ee6eb0ba3cff39800c5075a0c5713af6 */
+/* submission id: 6b3b06b47df054d34da8585fb19bdfbb7e3767c9 end judge */
 #include <bits/stdc++.h>
 #include <termio.h> // for instant input use
 using namespace std;
@@ -47,7 +49,7 @@ class Grid{
     unsigned int HASH = (unsigned)time(nullptr);
     public:
         Grid();
-        Grid(vector<vector<int> > cur);
+        Grid(vector<vector<int> > cur, int x, int y);
         void save();
         void load();
         void gen2(int zeros);
@@ -171,8 +173,8 @@ void play(){
 }
 
 Grid::Grid(){
-    res.resize(r);
-    for(int i = 0; i < ROW; i++) res[i].resize(COLUMN);
+    res.resize(max(r, c));
+    for(int i = 0; i < max(r, c); i++) res[i].resize(max(r, c));
     // display(res);
     srand(137*(unsigned)time(nullptr));
     int tmpa, tmpb, tmpc, tmpd;
@@ -183,8 +185,8 @@ Grid::Grid(){
     res[tmpa][tmpb] = tmpv1?4:2; res[tmpc][tmpd] = tmpv2?4:2;
 }
 
-Grid::Grid(vector<vector<int> > cur){
-    res = cur;
+Grid::Grid(vector<vector<int> > cur, int x, int y){
+    res = cur; r = x; c = y;
 }
 
 void Grid::save(){
@@ -232,7 +234,7 @@ bool Grid::left_merge(){
 }
 
 void Grid::reverse(){
-    for(int i = 0; i < r; i++) ::reverse(res[i].begin(), res[i].end());
+    for(int i = 0; i < r; i++) ::reverse(&res[i][0], &res[i][c-1]+1);
 }
 
 bool Grid::right_merge(){
@@ -241,7 +243,8 @@ bool Grid::right_merge(){
 }
 
 void Grid::transpose(){
-    for(int i = 1; i < r; i++) for(int j = 0; j < i; j++) eswap(res[i][j], res[j][i]);
+    for(int i = 1; i < max(r, c); i++) for(int j = 0; j < i; j++) eswap(res[i][j], res[j][i]);
+    eswap(r, c);
 }
 
 bool Grid::up_merge(){
