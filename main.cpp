@@ -15,6 +15,7 @@
 /* implement the main game */
 /* submission id: db6e2486ee6eb0ba3cff39800c5075a0c5713af6 */
 /* submission id: 6b3b06b47df054d34da8585fb19bdfbb7e3767c9 end judge */
+/* submission id: 710c644bdbf04f6f6bf17602ad9352ae672bccb1 non-square*/
 #include <bits/stdc++.h>
 #include <termio.h> // for instant input use
 using namespace std;
@@ -26,12 +27,14 @@ using namespace std;
 #define eswap(a, b) a^=b^=a^=b // c++ has akready got a swap func~
 
 
-bool QUIT = 0, LOG = 1;
+bool QUIT = 0, LOG = 0;
 int ROW = 4, COLUMN = 4, GOAL = 2048, PROB = 10, SCORE = 0, wid = 6, xxx;
+
 
 void intro();
 void ranklist(); //
 void play(); // unsigned int HASH = (unsigned)time(nullptr)
+string colour_select(int n);
 // int** play_initialize();
 // void play_save(int HASH); //
 // void play_load(int HASH); //
@@ -259,8 +262,8 @@ bool Grid::down_merge(){
 
 void Grid::display(){
     for(int i = 0; i < ROW; i++){
-        for(int j = 0; j < COLUMN; j++) cout<<setw(wid)<<res[i][j];
-        cout<<endl<<endl;
+        for(int j = 0; j < COLUMN; j++) cout<<colour_select(res[i][j])<<setw(int(wid/1.8))<<res[i][j]<<setw(wid)<<"\033[0m";
+        cout<<endl;
     }
 }
 
@@ -287,4 +290,25 @@ void Grid::reset(){
 
 void ranklist(){
     //TODO
+}
+
+string colour_select(int n){
+    switch(n){
+        case 0: return "\033[30m\033[7m ";
+        case 2: return "\033[31m\033[7m ";
+        case 4: return "\033[32m\033[7m ";
+        case 8: return "\033[33m\033[7m ";
+        case 16: return "\033[34m\033[7m ";
+        case 32: return "\033[35m\033[7m ";
+        case 64: return "\033[36m\033[7m ";
+        case 128: return "\033[37m\033[7m ";
+        case 256: return "\033[100m\033[7m ";
+        case 512: return "\033[101m\033[7m ";
+        case 1024: return "\033[102m\033[7m";
+        case 2048: return "\033[103m\033[7m";
+        case 4096: return "\033[104m\033[7m";
+        case 8192: return "\033[105m\033[7m";
+        case 16384: return "\033[106m\033[7m";
+        default: return "\00[2m \00[6m";
+    }
 }
