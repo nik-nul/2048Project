@@ -16,20 +16,21 @@
 /* submission id: db6e2486ee6eb0ba3cff39800c5075a0c5713af6 */
 /* submission id: 6b3b06b47df054d34da8585fb19bdfbb7e3767c9 end judge */
 /* submission id: 710c644bdbf04f6f6bf17602ad9352ae672bccb1 non-square*/
+/* submission id: 39eb69cf7e794d6aabd7f8e20ffee3b4c35392eb colourful-update */
+
+/* 2023-11-18 14:50 */
+/* change the rule to fit the description of pdf document, like step count and score will minus the step */
 #include <bits/stdc++.h>
 #include <termio.h> // for instant input use
 using namespace std;
-
 #define cls() system("clear")
 #define cl_buf() while((xxx = getchar()) != 0x0a && xxx != 0 && xxx != -1) // clear the input buffer to avoid wierd bugs 
 #define q() if(QUIT == 1) return 0
 #define self (*this) // this is actually borrow from python, as i've already get used to python style in sicp~ qwq
 #define eswap(a, b) a^=b^=a^=b // c++ has akready got a swap func~
 
-
 bool QUIT = 0, LOG = 0;
-int ROW = 4, COLUMN = 4, GOAL = 2048, PROB = 10, SCORE = 0, wid = 6, xxx;
-
+int ROW = 4, COLUMN = 4, GOAL = 2048, PROB = 10, wid = 6, xxx;
 
 void intro();
 void ranklist(); //
@@ -45,11 +46,14 @@ string colour_select(int n);
 // int cnt_zeros(int** res);
 
 class Grid{
+    public:
+        int score;
+        int step;
     private:
-    vector<vector<int> > res;
-    int r = ROW; int c = COLUMN;
-    // bool rev = 0, tr = 0;
-    unsigned int HASH = (unsigned)time(nullptr);
+        vector<vector<int> > res;
+        int r, c;
+        // bool rev = 0, tr = 0;
+        unsigned int HASH = (unsigned)time(nullptr);
     public:
         Grid();
         Grid(vector<vector<int> > cur, int x, int y);
@@ -67,6 +71,7 @@ class Grid{
         int cnt_zeros();
         bool deadQ();
         void reset();
+        void step_increment();
 };
 
 int main(void){
@@ -92,7 +97,6 @@ int main(void){
 void intro(){
     cout<<"THIS IS 2048 GAME"<<endl<<" enter TO STRAT DIRECTLY\n :m FOR MODIFIED GAME\n :q TO QUIT\n :h FOR HELP\n :r FOR RANKLIST"<<endl<<"Please enter:"<<endl;
     err:
-    SCORE = 0;
     if(getchar() == 0x3A){
         switch(getchar()){
             case 0x71: QUIT = 1; break;
@@ -120,7 +124,8 @@ void play(){
     int tmpcnt = 23; // chosen arbitrarily. that doesn't matter
     bool flag;
     while(1){
-        cout<<endl<<"YOUR SCORE: "<<SCORE<<endl;
+        cout<<"YOUR SCORE: "<<(cur.score-cur.step)<<endl;
+        cout<<"YOUR STEP: "<<cur.step<<endl;
         cur.display();
         err:
         cout<<"NEXT MOVE?(:wq FOR SAVE AND QUIT; :q FOR QUIT; :w FOR SAVE)"<<endl;
@@ -149,6 +154,7 @@ void play(){
             cout<<endl<<"INVALID MOVE! TRY AGAIN!"<<endl;
             goto err;
         }
+        cur.step_increment();
         if(!LOG) cls();
         tmpcnt = cur.cnt_zeros();
         if(tmpcnt == 0) goto L;
@@ -158,9 +164,9 @@ void play(){
             L:
             cout<<endl;
             cur.display();
-            cout<<"You Lose~"<<endl<<"Total Score: "<<SCORE<<endl<<"Enter m to menu";
+            cout<<"You Lose~"<<endl<<"Total Score: "<<(cur.score-cur.step)<<endl<<"Enter m to menu";
             ini:
-            ROW = 4; COLUMN = 4; GOAL = 2048; PROB = 10; SCORE = 0; wid = 6;
+            ROW = 4; COLUMN = 4; GOAL = 2048; PROB = 10; wid = 6;
             cur.reset();
             while(getchar()!=0x6D);
             goto E;
@@ -168,7 +174,7 @@ void play(){
         if(cur.winQ()){
             cout<<endl;
             cur.display();
-            cout<<"YOU WIN!!!"<<endl<<"Total Score: "<<SCORE<<endl<<"Enter m to menu";
+            cout<<"YOU WIN!!!"<<endl<<"Total Score: "<<(cur.score-cur.step)<<endl<<"Enter m to menu";
             goto ini;
         }
     }
@@ -176,6 +182,7 @@ void play(){
 }
 
 Grid::Grid(){
+    step = 0; r = ROW; c = COLUMN; score = 0;
     res.resize(max(r, c));
     for(int i = 0; i < max(r, c); i++) res[i].resize(max(r, c));
     // display(res);
@@ -228,7 +235,7 @@ bool Grid::left_merge(){
             }
             for(int j = 0; j < c - 1; j++){
                 if(res[i][j] == res[i][j+1] && res[i][j] != 0){
-                    SCORE += res[i][j]; res[i][j] *= 2; res[i][j+1] = 0; flag = 1;
+                    score += res[i][j]; res[i][j] *= 2; res[i][j+1] = 0; flag = 1;
                 }
             }
         }
@@ -263,7 +270,7 @@ bool Grid::down_merge(){
 void Grid::display(){
     for(int i = 0; i < ROW; i++){
         for(int j = 0; j < COLUMN; j++) cout<<colour_select(res[i][j])<<setw(int(wid/1.8))<<res[i][j]<<setw(wid)<<"\033[0m";
-        cout<<endl;
+        cout<<"|"<<endl;
     }
 }
 
@@ -286,6 +293,10 @@ bool Grid::deadQ(){
 
 void Grid::reset(){
     res.clear();
+}
+
+void Grid::step_increment(){
+    step++;
 }
 
 void ranklist(){
