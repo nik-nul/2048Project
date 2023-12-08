@@ -26,6 +26,11 @@
 /* finished save and load part using cereal, after fails with boost and mere fstream */
 /* reformat the code */
 /* revise menu jump logic */
+
+/* 2023-12-07 20:00 ~ 2023-12-08 14:30 */
+/* finish coin and delete. finish ranklist */
+/* improve structure of the program */
+
 #include <bits/stdc++.h>
 #include <termio.h> // for instant input use
 #include <dirent.h> // for dir scan use
@@ -34,12 +39,12 @@
 // #include <boost/serialization/vector.hpp>
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/vector.hpp>
+#include <cereal/types/set.hpp>
 using namespace std;
 #define cls() system("clear")
 #define cl_buf() while((xxx = getchar()) != 0x0a && xxx != 0 && xxx != -1) // clear the input buffer to avoid wierd bugs 
 #define q() if(QUIT == 1) return 0
 #define self (*this) // this is actually borrow from python, as i've already get used to python style in sicp~ qwq
-#define eswap(a, b) a^=b^=a^=b // c++ has akready got a swap func~
 #define is_exist(s) (access(s.c_str(), F_OK ) != -1 )
 
 bool QUIT = 0, LOG = 0;
@@ -60,6 +65,8 @@ class Grid{
         int score, step, goal;
         unsigned int HASH = (unsigned)time(nullptr);
         int r, c;
+        int coin = 0;
+        bool arch = 0;
         vector<vector<int> > res;
     private:
         // friend class boost::serialization::access;
@@ -73,7 +80,9 @@ class Grid{
         template<class Archive> friend void serialize(Archive &ar, Grid &grid);
     public:
         Grid();
+        ~Grid();
         // Grid(vector<vector<int> > cur, int x, int y);
+        void set_zero(int x, int y);
         void gen2(int zeros);
         bool left_merge();
         void reverse();
@@ -85,7 +94,6 @@ class Grid{
         bool winQ();
         int cnt_zeros();
         bool deadQ();
-        void reset();
         void step_increment();
 };
 
@@ -96,7 +104,10 @@ string colour_select(int n);
 bool save(Grid grid);
 Grid load(string fname);
 vector<string> read_list();
-void print_list(vector<string> vec);
+void print_vec(vector<string> vec);
+bool rank_save(int r);
+void intro_l();
+set<int, greater<int>> rank_load();
 
 int main(void){
     // enable instant input
@@ -120,30 +131,19 @@ void intro(){
     cout<<"THIS IS 2048 GAME"<<endl<<" enter TO STRAT DIRECTLY\n :m FOR MODIFIED GAME\n :l TO LOAD\n :q TO QUIT\n :h FOR HELP\n :r FOR RANKLIST"<<endl<<"Please enter:"<<endl;
     err:
     if(getchar() == 0x3A){
-        vector<string> lst = read_list();
-        int tmp;
+
         switch(getchar()){
             case 0x71:
                 QUIT = 1;
                 break;
             case 0x68:
                 cls();
-                cout<<"help here"<<endl<<"Enter to Back to Menu"<<endl;
+                cout<<"Use your arrow keys to move the tiles.\nTiles with the same number merge into one when they touch.\nAdd them up to reach 2048!"<<endl<<"Enter to Back to Menu"<<endl;
                 cl_buf(); // wait for input
                 cls();
                 goto menu;
             case 0x6C:
-                cls();
-                if(lst.empty()){
-                    cout<<"NO SAVE!"<<endl<<"Enter to Back to Menu";
-                    getchar();
-                    cls();
-                    goto menu;
-                }
-                print_list(lst);
-                cout<<"Please Choose the Number:  ";
-                cin>>tmp;
-                LOAD_FLAG = lst[tmp];
+                intro_l();
                 goto err;
             case 0x6D:
                 cout<<endl<<"ENTER LENGTH (default = 4):"; cin>>ROW;
@@ -155,12 +155,11 @@ void intro(){
                 break;
             case 0x72:
                 ranklist();
-                goto err;
+                goto menu;
             default:
                 cout<<endl<<"INVALID PARAMETER. TRY AGAIN!"<<endl;
                 goto err;
         }
-        lst.clear();
         cl_buf();
     }
 }
@@ -173,9 +172,10 @@ void play(string fname){
     while(1){
         cout<<"YOUR SCORE: "<<(cur.score-cur.step)<<endl;
         cout<<"YOUR STEP: "<<cur.step<<endl;
+        cout<<"YOUR COIN: "<<cur.coin<<endl;
         cur.display();
         err:
-        cout<<"NEXT MOVE? (:q FOR QUIT; :w FOR SAVE)"<<endl;
+        cout<<"NEXT MOVE? (:q FOR QUIT; :w FOR SAVE; :d FOR SET ZEROS WITH COINS)"<<endl;
         switch(getchar()){
             case 0x3A:
                 switch(getchar()){
@@ -188,6 +188,23 @@ void play(string fname){
                             cout<<endl<<"SAVED"<<endl;
                         else
                             cout<<endl<<"FAILD"<<endl;
+                        goto err;
+                    case 0x64:
+                        if(cur.coin < 15)
+                            cout<<endl<<"Insufficient coins!"<<endl;
+                        else{
+                            errr:
+                            cout<<endl<<"Please input x(ROW) and y(COLUMN) (begin from 1)"<<endl;
+                            int x, y;
+                            cin>>x>>y;
+                            cl_buf();
+                            if(y > cur.r || x > cur.c || x < 1 || y < 1){
+                                cout<<endl<<"Invalid input, Try again!"<<endl;
+                                goto errr;
+                            }else
+                                cur.set_zero(x-1, y-1);
+                        }
+                        cur.display();
                         goto err;
                     default:
                         cout<<endl<<"INVALID PARAMETER. TRY AGAIN!"<<endl;
@@ -220,8 +237,6 @@ void play(string fname){
             cur.display();
             cout<<"You Lose~"<<endl<<"Total Score: "<<(cur.score-cur.step)<<endl<<"Enter m to menu";
             ini:
-            ROW = 4; COLUMN = 4; GOAL = 2048; PROB = 10; wid = 6;
-            cur.reset();
             while(getchar()!=0x6D);
             goto E;
         }
@@ -236,7 +251,7 @@ void play(string fname){
 }
 
 Grid::Grid(){
-    step = 0; r = ROW; c = COLUMN; score = 0; goal = GOAL;
+    step = 0; r = ROW; c = COLUMN; score = 0; goal = GOAL; LOG = 0;
     res.resize(max(r, c));
     for(int i = 0; i < max(r, c); i++)
         res[i].resize(max(r, c));
@@ -256,6 +271,20 @@ Grid::Grid(){
     res[tmpc][tmpd] = tmpv2?4:2;
 }
 
+Grid::~Grid(){
+    if(not self.arch){
+        rank_save(score - step);
+        ROW = 4; COLUMN = 4; GOAL = 2048; PROB = 10; wid = 6;
+    }
+    cout<<endl<<"Done!"<<endl;
+}
+
+void Grid::set_zero(int x, int y){
+    res[x][y] = 0;
+    coin -= 15;
+    cout<<"DELETED!"<<endl;
+}
+
 // Grid::Grid(vector<vector<int> > cur, int x, int y){
 //     res = cur; r = x; c = y;
 // }
@@ -272,11 +301,18 @@ vector<string> read_list(){
     return vec;
 }
 
-void print_list(vector<string> vec){
+void print_vec(vector<string> vec){
     int i = 0;
-    cout<<endl;
     for(vector<string>::iterator it = vec.begin(); it != vec.end(); it++){
-        cout<<i<<"    "<<*it<<endl;
+        cout<<i<<"\t"<<*it<<endl;
+        i++;
+    }
+}
+
+void print_set(set<int, greater<int>> s){
+    int i = 1;
+    for(set<int, greater<int>>::iterator it = s.begin(); it != s.end(); it++){
+        cout<<i<<"\t"<<*it<<endl;
         i++;
     }
 }
@@ -316,6 +352,7 @@ bool Grid::left_merge(){
                     res[i][j] *= 2;
                     res[i][j+1] = 0;
                     flag = 1;
+                    coin++;
                 }
             }
         }
@@ -338,8 +375,8 @@ bool Grid::right_merge(){
 void Grid::transpose(){
     for(int i = 1; i < max(r, c); i++)
         for(int j = 0; j < i; j++)
-            eswap(res[i][j], res[j][i]);
-    eswap(r, c);
+            swap(res[i][j], res[j][i]);
+    swap(r, c);
 }
 
 bool Grid::up_merge(){
@@ -394,16 +431,12 @@ bool Grid::deadQ(){
     return 1;
 }
 
-void Grid::reset(){
-    res.clear();
-}
-
 void Grid::step_increment(){
     step++;
 }
 
 template<class Archive> void serialize(Archive &ar, Grid &grid){
-    ar(grid.res, grid.HASH, grid.r, grid.c, grid.score, grid.step, grid.goal);
+    ar(grid.res, grid.HASH, grid.r, grid.c, grid.score, grid.step, grid.goal, grid.coin);
 }
 
 
@@ -415,7 +448,9 @@ bool save(Grid grid){
     // boost::archive::text_oarchive oa(ofs);
     // oa<<res;
     cereal::BinaryOutputArchive oarchive(ofs);
+    grid.arch = 1;
     oarchive(grid);
+    grid.arch = 0;
     return 1;
 }
 
@@ -430,7 +465,57 @@ Grid load(string fname){
 }
 
 void ranklist(){
-    //TODO
+    cls();
+    cout<<"ranklist as follow"<<endl;
+    print_set(rank_load());
+    cout<<"Enter to Back to Menu";
+    getchar();
+    cls();
+}
+
+void intro_l(){
+    cls();
+    vector<string> lst = read_list();
+    int tmp;
+    if(lst.empty()){
+        cout<<"NO SAVE!"<<endl<<"Enter to Back to Menu";
+        getchar();
+        cls();
+    }else{
+        cout<<"saves list as follow:"<<endl;
+        print_vec(lst);
+        cout<<"Please Choose the Number:  ";
+        cin>>tmp;
+        LOAD_FLAG = lst[tmp];
+    }
+}
+
+set<int, greater<int>> rank_load(){
+    ifstream ifs("ranklist", ios::binary);
+    if(!ifs)
+        cout<<"err in open";
+    set<int, greater<int>> tmp;
+    try{
+        cereal::BinaryInputArchive archive(ifs);
+        archive(tmp);
+    }catch(cereal::Exception& err){
+        // cerr<<endl<<err.what()<<endl;
+    }
+    return tmp;
+}
+
+bool rank_save(int r){
+    ofstream ofs;
+    ofs.open("ranklist", ios::binary | ios::app);
+    if(!ofs)
+        return 0;
+    ofs.close();
+    set<int, greater<int>> tmp = rank_load();
+    tmp.insert(r);
+    ofs.open("ranklist", ios::binary);
+    cereal::BinaryOutputArchive oarchive(ofs);
+    oarchive(tmp);
+    return 1;
 }
 
 string colour_select(int n){
