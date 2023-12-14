@@ -31,6 +31,10 @@
 /* finish coin and delete. finish ranklist */
 /* improve structure of the program */
 
+/* 2023-12-14 17:52 */
+/* final submission(i hope) */
+/* revise gen2 */
+
 #include <bits/stdc++.h>
 #include <termio.h> // for instant input use
 #include <dirent.h> // for dir scan use
@@ -62,7 +66,7 @@ string LOAD_FLAG = "None";
 
 class Grid{
     public:
-        int score, step, goal;
+        int score, step, goal, prob;
         unsigned int HASH = (unsigned)time(nullptr);
         int r, c;
         int coin = 0;
@@ -251,24 +255,25 @@ void play(string fname){
 }
 
 Grid::Grid(){
-    step = 0; r = ROW; c = COLUMN; score = 0; goal = GOAL; LOG = 0;
+    step = 0; r = ROW; c = COLUMN; score = 0; goal = GOAL; prob = PROB;
     res.resize(max(r, c));
     for(int i = 0; i < max(r, c); i++)
         res[i].resize(max(r, c));
+    self.gen2(r*c); self.gen2(r*c);
     // display(res);
-    srand(137*(unsigned)time(nullptr));
-    int tmpa, tmpb, tmpc, tmpd;
-    do{
-        tmpa = rand()%ROW;
-        tmpc = rand()%ROW;
-        tmpb = rand()%COLUMN;
-        tmpd = rand()%COLUMN;
-    } while(tmpa == tmpc && tmpb == tmpd);
-    // int tmp1 = rand()%(ROW*COLUMN), tmp2 = (tmp1 + 20050523)%(ROW*COLUMN);
-    // tmpa = tmp1 % ROW; tmpb = tmp1 % COLUMN; tmpc = tmp2 % ROW; tmpd = tmp2 % COLUMN;
-    bool tmpv1 = (rand()%100 < PROB), tmpv2 = (rand()%100 < PROB);
-    res[tmpa][tmpb] = tmpv1?4:2;
-    res[tmpc][tmpd] = tmpv2?4:2;
+    // srand(137*(unsigned)time(nullptr));
+    // int tmpa, tmpb, tmpc, tmpd;
+    // do{
+    //     tmpa = rand()%ROW;
+    //     tmpc = rand()%ROW;
+    //     tmpb = rand()%COLUMN;
+    //     tmpd = rand()%COLUMN;
+    // } while(tmpa == tmpc && tmpb == tmpd);
+    // // int tmp1 = rand()%(ROW*COLUMN), tmp2 = (tmp1 + 20050523)%(ROW*COLUMN);
+    // // tmpa = tmp1 % ROW; tmpb = tmp1 % COLUMN; tmpc = tmp2 % ROW; tmpd = tmp2 % COLUMN;
+    // bool tmpv1 = (rand()%100 < PROB), tmpv2 = (rand()%100 < PROB);
+    // res[tmpa][tmpb] = tmpv1?4:2;
+    // res[tmpc][tmpd] = tmpv2?4:2;
 }
 
 Grid::~Grid(){
@@ -320,11 +325,12 @@ void print_set(set<int, greater<int>> s){
 // set kth 0 to 2
 void Grid::gen2(int zeros){
     int tmp = rand()%zeros, k = 0;
+    bool tmpv = (rand()%100 < prob);
     for(int i = 0; i < r; i++){
         for(int j = 0; j < c; j++){
             if(res[i][j] == 0){
                 if(tmp == k){
-                    res[i][j] = 2;
+                    res[i][j] = tmpv?4:2;
                     goto E; // i too know i can use flag to jump out the loop here, but i think it's uncessary!
                 }else k++;
             }
@@ -337,16 +343,16 @@ bool Grid::left_merge(){
     bool flag = 0;
     for(int i = 0; i < r; i++){
         for(int k = 0; k < c - 1; k++){
-            for(int j = 0; j < c - 1; j++){
+            for(int j = 0; j < c - 1; j++){ //move
                 if(res[i][j] == 0 && res[i][j+1] != 0){
                     res[i][j] = res[i][j+1];
                     res[i][j+1] = 0;
                     flag = 1;
-                    j = max(0, j - 2);
+                    j = max(0, j - 2); // j-2 empty?
                 }
             }
 
-            for(int j = 0; j < c - 1; j++){
+            for(int j = 0; j < c - 1; j++){ // merge
                 if(res[i][j] == res[i][j+1] && res[i][j] != 0){
                     score += res[i][j];
                     res[i][j] *= 2;
@@ -436,9 +442,8 @@ void Grid::step_increment(){
 }
 
 template<class Archive> void serialize(Archive &ar, Grid &grid){
-    ar(grid.res, grid.HASH, grid.r, grid.c, grid.score, grid.step, grid.goal, grid.coin);
+    ar(grid.res, grid.HASH, grid.r, grid.c, grid.score, grid.step, grid.goal, grid.coin, grid.prob);
 }
-
 
 bool save(Grid grid){
     // if(access(to_string(res.HASH).c_str(), F_OK ) == -1 ) system("touch "+to_string(res.HASH));
