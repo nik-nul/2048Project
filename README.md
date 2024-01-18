@@ -255,7 +255,7 @@ main.cpp:304:25: warning: unknown escape sequence: '\.'
 - `set_zero`方法实现花金币设$0$的趣味功能
 - `gen2`方法生成一个随机数字再棋盘上
 - `deadQ`和`winQ`方法实现胜负判断
-- `cnt_zero`方法清点棋盘上$0$的个数，辅助`deadQ`、`winQ`和`gen2`
+- `cnt_zero`方法清点棋盘上 $0$ 的个数，辅助`deadQ`、`winQ`和`gen2`
 - `display`方法打印棋盘
 - `step_increment`方法进行步数增加
 
